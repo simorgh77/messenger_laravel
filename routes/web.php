@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MessageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -38,6 +39,13 @@ Route::middleware([
 Route::middleware("auth")->get("/users",function (){
     return  \App\Models\User::all();
 });
-Route::middleware('auth')->get("/users",function (){
+Route::middleware('auth')->get("/send",function (){
     return  \App\Models\User::all();
 });
+Route::group(['prefix'=>'api/chat','as'=>'chat.'], function (){
+
+    Route::get('/receivingMessages/{user:id}',[MessageController::class,'receivingMessages'])->name("receivingMessages");
+    Route::get('/sendingMassages/{user:id}',[MessageController::class,'sendingMassages'])->name("sendingMassages");
+    Route::post('/storeMessage/{user:id}',[MessageController::class,'store'])->name("store")->middleware('auth:sanctum');
+
+})->middleware('auth');
