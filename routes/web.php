@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FindAllUsers;
 use App\Http\Controllers\MessageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -36,16 +37,18 @@ Route::middleware([
     })->name('dashboard');
 });
 
-Route::middleware("auth")->get("/users",function (){
-    return  \App\Models\User::all();
-});
+Route::middleware("auth")->get("/users",[FindAllUsers::class,'index']);
 Route::middleware('auth')->get("/send",function (){
     return  \App\Models\User::all();
 });
 Route::group(['prefix'=>'api/chat','as'=>'chat.'], function (){
+    Route::get("/user/{user:id}",function (\App\Models\User $user){
+      return  $user;
+    });
 
-    Route::get('/receivingMessages/{user:id}',[MessageController::class,'receivingMessages'])->name("receivingMessages");
-    Route::get('/sendingMassages/{user:id}',[MessageController::class,'sendingMassages'])->name("sendingMassages");
-    Route::post('/storeMessage/{user:id}',[MessageController::class,'store'])->name("store")->middleware('auth:sanctum');
+    Route::get('/allMessages/{user:id}',[MessageController::class,'allMessages'])->name("allMessages");
+    Route::post('/storeMessage/{user:id}',[MessageController::class,'store'])->name("store");
 
 })->middleware('auth');
+
+

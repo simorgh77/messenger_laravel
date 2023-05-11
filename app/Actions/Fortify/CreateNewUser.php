@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Events\AvailableUser;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -29,11 +30,14 @@ class CreateNewUser implements CreatesNewUsers
         ])->validate();
 
         return DB::transaction(function () use ($input) {
+
+
             return tap(User::create([
                 'name' => $input['name'],
                 'email' => $input['email'],
                 'password' => Hash::make($input['password']),
             ]), function (User $user) {
+                event(new AvailableUser());
                 $this->createTeam($user);
             });
         });

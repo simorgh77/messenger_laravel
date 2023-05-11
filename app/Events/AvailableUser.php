@@ -2,32 +2,25 @@
 
 namespace App\Events;
 
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-
+use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SendMessage implements ShouldBroadcast
+class AvailableUser implements  ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message ;
-    public $from;
-    public $to;
     /**
      * Create a new event instance.
      */
-    public function __construct($message,$from,$to)
+    public $availableUsers;
+    public function __construct()
     {
-        $this->message=$message;
-        $this->from=$from;
-        $this->to=$to;
-
     }
 
     /**
@@ -35,11 +28,16 @@ class SendMessage implements ShouldBroadcast
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn(): PrivateChannel
+    public function broadcastOn(): Channel
     {
-//            return  new Channel('sendMessagePublic');
-        return new PrivateChannel('sendMessagePrivate.'.$this->from.'.'.$this->to);
+        return
+            new Channel('all_users');
 
     }
 
+    public function broadcastWith(){
+        return [
+            User::all()
+        ];
+    }
 }
