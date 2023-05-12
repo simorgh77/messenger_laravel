@@ -36,8 +36,8 @@ class MessageController extends Controller
                 "receiver_id"=>$user->id
             ]);
 
-    $event=event(new SendMessage($message['message'],$currentUser->id,$user->id));
-//    $event=event(new ReceiveMessage($message['message'],$user->id,$currentUser->id));
+    $event=event(new SendMessage($message,$user->id));
+//     $event=event(new ReceiveMessage($message['message'],$user->id,$currentUser->id));
     return $message;
     }
 

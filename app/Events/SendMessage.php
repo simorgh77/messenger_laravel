@@ -17,17 +17,16 @@ class SendMessage implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message ;
-    public $from;
+//    public $from;
     public $to;
     /**
      * Create a new event instance.
      */
-    public function __construct($message,$from,$to)
+    public function __construct($message,$to)
     {
-        $this->message=$message;
-        $this->from=$from;
+        $this->message=$message->toArray();
+//        $this->from=$from;
         $this->to=$to;
-
     }
 
     /**
@@ -38,8 +37,7 @@ class SendMessage implements ShouldBroadcast
     public function broadcastOn(): PrivateChannel
     {
 //            return  new Channel('sendMessagePublic');
-        return new PrivateChannel('sendMessagePrivate.'.$this->from.'.'.$this->to);
-
+        return new PrivateChannel('sendMessagePrivate.'.$this->to);
     }
 
 }

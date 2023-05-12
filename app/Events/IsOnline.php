@@ -9,24 +9,17 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use PhpParser\Node\Expr\Array_;
 
-class ReceiveMessage implements ShouldBroadcast
+class IsOnline implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public $message ;
-    public $from;
-    public $to;
-    public function __construct($message,$from,$to)
+    public function __construct()
     {
-        $this->message=$message;
-        $this->from=$from;
-        $this->to=$to;
-
+        //
     }
 
     /**
@@ -34,9 +27,8 @@ class ReceiveMessage implements ShouldBroadcast
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn(): PrivateChannel
+    public function broadcastOn(): PresenceChannel
     {
-        return new PrivateChannel('receiveMessagePrivate'.$this->to.'.'.$this->from);
-
+        return new PresenceChannel('presence.online.1');
     }
 }

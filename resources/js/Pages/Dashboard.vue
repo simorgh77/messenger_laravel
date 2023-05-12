@@ -6,73 +6,99 @@ import { usePage  } from '@inertiajs/vue3'
 import {onMounted, reactive, ref,computed} from "vue";
 onMounted(()=>{
 fetch('http://localhost:8000/users').then((res) => res.json())
-    .then((json) => (users.value=[...json.filter(item=>item.id != account["id"])]))
+    .then((json) => (users.value=[...json.filter(item=>item.id !== account["id"])]))
     .catch((err) => (error.value = err))
-
-
-
-
 })
 
-async function  handleSaveMessage(){
-
-
-  await  fetch(`http://localhost:8000/api/chat/storeMessage/${activeConversation.value}`,{
+ function  handleSaveMessage(){
+    fetch(`http://localhost:8000/api/chat/storeMessage/${activeConversation.value}`,{
         method:'POST',
         body: JSON.stringify({ "message": message.value }),
-      headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+    }).then(async res=> {
+        if ( res.json.length>1){
+            allMessages.value.push(await res.json()[0])
+        }
+        else {
+            allMessages.value.push(await res.json())
+        }
+        message.value=''
+        presenceChanel.whisper('stop-typing',{
+        })
+        console.log("fetch",allMessages.value)
     })
 }
 
-function  handleClick(id){
 
+function  handleClick(id){
     //listen on send event
-    Echo.private(`sendMessagePrivate.${account['id']}.${id}`)
+    Echo.private(`sendMessagePrivate.${account['id']}`)
         .listen('SendMessage',e=>{
-            allMessages.value.push({id:Math.random(),message:e.message,sender_id:account['id']
-                ,receiver_id:destUser.user['id']})
-            needRefresh.value=!needRefresh.value
-            console.log(allMessages.value)
+            console.log("websocket",e)
+            allMessages.value.push(
+                e.message
+            )
         })
     //listen on received event
-    Echo.private(`receiveMessagePrivate.${id}.${account['id']}`)
-        .listen('ReceiveMessage',e=>{
-            allMessages.value.push({id:Math.random(),message:e.message,sender_id:destUser.user['id']
-                ,receiver_id:account['id']})
-            needRefresh.value=!needRefresh.value
-            console.log(allMessages.value)
-        })
-
-
+    // Echo.private(`receiveMessagePrivate.${id}.${account['id']}`)
+    //     .listen('ReceiveMessage',e=>{
+    //         console.log('receive',e)
+    //         allMessages.value.push({id:Math.random(),message:e.message,sender_id:destUser.user['id']
+    //             ,receiver_id:account['id']})
+    //         needRefresh.value=!needRefresh.value
+    //         console.log(allMessages.value)
+    //     })
 
     activeConversation.value=id
     fetch(`api/chat/user/${id}`).then(async res=> {
         destUser.user=await res.json()
     })
-
     fetch(`api/chat/allMessages/${id}`).then(async  res=> {
         allMessages.value=await res.json()
-        console.log(allMessages.value)
     })
 
-
 }
+
+function handlemessageChange(e){
+    if (activeConversation.value && e.target.value.length!==0){
+        presenceChanel.whisper('typing',{
+            name:account['name']
+        })
+    }
+    else {
+        presenceChanel.whisper('stop-typing',{
+        })
+    }
+}
+
+const whisperMessage=ref("")
+const account=reactive(usePage().props.auth.user);
 const destUser=reactive({user:null});
+const presenceChanel=Echo.join(`presence.online.1`);
+const isMessageActive=ref(false)
+const onlineUsers=ref([])
 const activeConversation=ref('')
 const allMessages=ref([]);
-const account=reactive(usePage().props.auth.user);
 const users=ref()
-const needRefresh=ref(true)
 const message=ref("")
-console.log(users.value)
-//
+
+presenceChanel.here((ids)=>{
+    console.log("subscribe",ids)
+})
+    .joining((ids)=>{
+
+    })
+    .leaving((ids)=>{
+    })
+    .listenForWhisper('typing',(event)=>{
+        whisperMessage.value=event.name+' is typing'
+    })
+    .listenForWhisper('stop-typing',(event)=>{
+        whisperMessage.value=""
+    })
 Echo.listen(`all_users`,'AvailableUser',(e) => {
-    users.value=e[0].filter(item=>item.id != account["id"]);
-
-    console.log(users.value)
+    users.value=e[0].filter(item=>item.id !== account["id"]);
     });
-
-
 
 // Echo.join(`group_chat.1`)
 //     .here((users) => {
@@ -91,7 +117,6 @@ Echo.listen(`all_users`,'AvailableUser',(e) => {
 //         console.error(error);
 //     });
 
-console.log(destUser)
 </script>
 
 <template>
@@ -107,7 +132,7 @@ console.log(destUser)
                         >
 
                             <img v-if="account['profile_photo_path']" class="rounded-full" :src="'storage/'+account['profile_photo_path']"/>
-                            <img v-else class="rounded-full" :src="account['profile_photo_url']"/>
+                           <img v-else class="rounded-full" :src="account['profile_photo_url']"/>
                         </div>
                         <div class="ml-2 font-bold text-2xl">{{account['name']}}</div>
                     </div>
@@ -131,17 +156,21 @@ console.log(destUser)
                                 <div
                                     class="flex items-center justify-center  h-8 w-8 bg-indigo-200 rounded-full"
                                 >
-                                    <img  class="text-green bg-green-500 font-[2px] w-3 " src="https://img.icons8.com/?size=512&id=474&format=png" alt="">
                                     <img v-if="user['profile_photo_path']" class="rounded-full" :src="'storage/'+user['profile_photo_path']">
-                                    <img v-else :src="user['profile_photo_url']">
+                                    <img class="rounded-full" v-else :src="user['profile_photo_url']">
                                 </div>
-                                <div class="ml-2 text-sm font-semibold" >{{user.name}}</div>
+                                <div class="ml-2 flex justify-between w-1/2 items-center  text-sm font-semibold" >{{user.name}}
+                                    <div class="">
+
+                                        <img v-if="user['is_online']" class="text-green bg-green-500 rounded-full font-[2px] w-3 " src="https://img.uxwing.com/wp-content/themes/uxwing/download/signs-symbols/green-circle-icon.svg" alt="">
+                                </div>
+                                </div>
                             </button>
                         </div>
 
                     </div>
                 </div>
-                <div class="flex flex-col flex-auto h-full p-6 ">
+                <div class="flex flex-col flex-auto h-full p-6 pb-20">
                     <div
                         class="flex flex-col flex-auto flex-shrink-0 rounded-2xl bg-gray-100 h-full p-4"
                     >
@@ -167,7 +196,7 @@ console.log(destUser)
                                             </div>
                                         </div>
                                     </div>
-                                    <div v-if="activeConversation"  class="col-start-6 col-end-13 p-3 rounded-lg">
+                                    <div v-else-if="activeConversation"   class="col-start-6 col-end-13 p-3 rounded-lg">
                                         <div class="flex items-center justify-start flex-row-reverse">
                                             <div
                                                 class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-500 flex-shrink-0"
@@ -193,10 +222,14 @@ console.log(destUser)
                                 </div>
                             </div>
                         </div>
+<div class="absolute bg-white px-5 py-2 bottom-[55px]">
+    {{ whisperMessage}}
+</div>
                         <div
                             class="flex flex-row items-center h-16  rounded-xl bg-white w-full px-4 absolute bottom-0"
-                        style="width: 78%"
+                        style="width: 77%"
                         >
+
                             <div>
                                 <button
                                     class="flex items-center justify-center text-gray-400 hover:text-gray-600"
@@ -217,13 +250,18 @@ console.log(destUser)
                                     </svg>
                                 </button>
                             </div>
+
                             <div class="flex-grow ml-4 ">
+
                                 <div class="relative w-full">
+
 
                                     <input
                                         type="text"
                                         v-model="message"
-
+                                        @input="handlemessageChange"
+                                        @focus="isMessageActive=true"
+                                        @focusout="isMessageActive=false"
                                         class="flex w-full border rounded-xl focus:outline-none focus:border-indigo-300 pl-4 h-10"
                                     />
 

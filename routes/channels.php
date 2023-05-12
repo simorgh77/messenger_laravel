@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\AvailableUser;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -18,11 +19,20 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 
-Broadcast::channel('sendMessagePrivate.{sender}.{receiver}', function ($user) {
+//Broadcast::channel('sendMessagePrivate.{sender}.{receiver}', function ($user) {
+//    return !is_null($user);
+//});
+
+Broadcast::channel('sendMessagePrivate.{receiver}', function ($user) {
     return !is_null($user);
 });
-Broadcast::channel('receiveMessagePrivate.{receiver}.{sender}', function ($user) {
-    return !is_null($user);
+//Broadcast::channel('receiveMessagePrivate.{receiver}.{sender}', function ($user) {
+//    return !is_null($user);
+//});
+Broadcast::channel('presence.online.{receiver}', function ($user) {
+    if (!is_null($user)){
+        return $user;
+    }
 });
 
 Broadcast::channel("group_chat.{roomId}", function ($user,$roomId) {

@@ -64,5 +64,4 @@ class User extends Authenticatable
     {
         return $this->hasMany( Message::class )->where("sender_id",$this->id)->where("receiver_id",$another->id)->orWhere("sender_id",$another->id)->where("receiver_id",$this->id) ;
     }
-
 }

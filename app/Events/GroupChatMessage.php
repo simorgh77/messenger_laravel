@@ -30,9 +30,6 @@ class GroupChatMessage implements ShouldBroadcast
      */
     public function broadcastOn(): PresenceChannel
     {
-
-
           return  new PresenceChannel('group_chat.' . $this->message->group_id);
-
     }
 }
